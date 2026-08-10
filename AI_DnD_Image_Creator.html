@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI D&D Image Creator</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:#151218;color:#f7f2fa;font-family:system-ui,sans-serif}
+.wrap{max-width:900px;margin:auto;padding:22px 16px 40px;text-align:center}
+h1{font-size:clamp(30px,7vw,54px);margin:8px 0 2px} .subtitle{opacity:.75;margin-bottom:20px}
+.tray{background:linear-gradient(145deg,#2a2230,#18141c);border:2px solid #665070;border-radius:28px;padding:20px;box-shadow:0 16px 50px #0008}
+.dice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.die{background:#211a27;border:1px solid #765c84;border-radius:18px;padding:14px;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:space-between}
+.label{font-weight:800;font-size:15px} .shape{width:76px;height:76px;display:grid;place-items:center;font-weight:900;font-size:25px;background:#30233a;border:3px solid #a384b4;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);transition:transform .65s cubic-bezier(.17,.67,.25,1.3)}
+.rolling{animation:roll .7s ease-in-out} @keyframes roll{0%{transform:rotate(0) translateY(0)}35%{transform:rotate(180deg) translateY(-25px)}70%{transform:rotate(330deg) translateY(5px)}100%{transform:rotate(360deg) translateY(0)}}
+.result{font-size:13px;line-height:1.25;min-height:38px;opacity:.9}
+button{border:1px solid #9b7cad;background:#392b45;color:white;border-radius:12px;padding:12px 17px;font-weight:800;font-size:15px;cursor:pointer;margin:7px 4px}
+button:hover{background:#4a3757} .primary{font-size:18px;padding:15px 24px;background:#503960}
+.prompt{margin-top:18px;background:#211a27;border:1px solid #765c84;border-radius:20px;padding:20px;text-align:left}
+.prompt h2{margin-top:0;text-align:center} #promptText{line-height:1.6;font-size:17px}
+.small{font-size:12px;opacity:.6;margin-top:12px}
+@media(max-width:700px){.dice-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:430px){.dice-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎲 AI D&D Image Creator</h1>
+<div class="subtitle">Roll your fate. Build your image. Reroll anything you don't like.</div>
+<div class="tray">
+<div class="dice-grid" id="diceGrid"></div>
+<button class="primary" onclick="rollAll()">🎲 ROLL THE WHOLE PARTY</button>
+<button onclick="makePrompt()">📜 BUILD MY PROMPT</button>
+<button onclick="clearAll()">↺ RESET</button>
+</div>
+<div class="prompt">
+<h2>📜 Your Image Recipe</h2>
+<div id="promptText">Roll the dice to begin your adventure.</div>
+<button onclick="copyPrompt()">📋 Copy Prompt</button>
+<div class="small">You can reroll any individual die without changing the others.</div>
+</div>
+</div>
+<script>
+const tables={"Subject": ["A mysterious stranger beneath a flickering neon sign in the rain", "An enchanted cottage hidden deep in an ancient forest", "A character discovering a tiny door in an ordinary bedroom", "A glamorous villain preparing for an important night out", "An abandoned amusement park coming alive after midnight", "A witch running a tiny roadside coffee shop", "A vampire attempting to enjoy a perfectly normal beach day", "A portrait surrounded by floating candles", "An old photograph that appears to show the future", "A magical library with books flying through the air", "A monster having an unexpectedly wholesome tea party", "A rock star performing on a stage made of bones and roses", "A character stepping through a doorway into another season", "A haunted mansion hosting an elegant masquerade", "A tiny dragon guarding an absurdly huge pile of candy", "A futuristic city where glowing flowers grow between the buildings", "A character meeting their childhood imaginary friend as an adult", "A gothic garden beneath an enormous moon", "A pirate captain discovering something impossible at sea", "A retro 1980s bedroom with something supernatural in the shadows", "A character dressed in an outfit inspired by their favorite song", "A surreal diner where every customer is a supernatural creature", "A forest spirit appearing in the middle of a modern city", "A dramatic wedding between two completely unexpected characters", "A detective investigating a crime scene where nothing is normal", "A character trapped inside a painting trying to escape", "A carnival fortune teller who can see one person's greatest secret", "A spooky scene that is somehow ridiculously adorable", "A strange glowing object discovered in a backyard", "A fantasy warrior taking a quiet moment beside a campfire", "A villain's lair redesigned as an extremely cozy living room", "A character waking up to find their pets have mysteriously become human", "A glamorous portrait inspired by a thunderstorm", "A dollhouse containing a tiny version of the character's real home", "A character traveling through a portal into a world made entirely of clouds", "A supernatural creature trying to blend into a family dinner", "An underwater ballroom filled with ghosts", "A mysterious letter sealed with black wax", "A magical antique shop where every object has a story", "A group of unlikely friends sharing a late-night adventure", "A character standing alone on a moonlit road while something watches from the trees", "A fantasy version of an ordinary suburban neighborhood", "A horror villain dressed for a high-fashion photoshoot", "A mysterious hotel with one room that should not exist", "A character discovering that their shadow has a mind of its own", "A whimsical Halloween scene with no traditional orange-and-black decorations", "A peaceful picnic while complete chaos unfolds in the background", "A dark fairytale scene with a surprisingly happy ending", "A portrait surrounded by objects representing the character's personality", "An ordinary scene with one impossible detail hidden in plain sight", "A character exploring a forgotten carnival after finding an old ticket", "A royal portrait of a ruler who is secretly a monster", "A cozy monster's bedroom filled with ridiculous personal treasures", "A character walking through a city where the buildings are alive", "A mysterious lighthouse keeper watching something enormous in the ocean", "A magical bakery where the pastries have tiny personalities", "A detective noir scene featuring a supernatural suspect", "A character finding a mirror that shows a different version of reality", "A fantasy tavern where heroes and villains are having dinner together", "A character riding a strange creature through a moonlit landscape", "A haunted roadside motel with a surprisingly cheerful owner", "A character opening a music box that changes the room around them"], "Character": ["mysterious woman", "grizzled adventurer", "elegant vampire", "young witch", "masked detective", "chaotic fairy", "retired monster hunter", "glamorous villain", "ghostly musician", "time traveler", "punk rock bard", "royal sorcerer", "android explorer", "tiny dragon", "werewolf in formalwear", "pirate captain", "gothic librarian", "forest spirit", "fortune teller", "skeptical scientist"], "Color Scheme": ["crimson, black and antique gold", "violet, silver and midnight blue", "emerald, cream and bronze", "icy blue, white and silver", "hot pink, electric blue and black", "amber, chocolate brown and ivory", "teal, coral and warm gold", "monochromatic purple", "monochromatic red", "pastel rainbow", "forest green, black and copper", "orange, burgundy and cream"], "Lighting": ["soft golden-hour light", "dramatic moonlight", "flickering candlelight", "neon nightclub lighting", "harsh fluorescent light", "soft diffused window light", "strong backlighting and silhouette", "volumetric god rays", "stormy lightning flashes", "underwater caustic light", "colored rim lighting", "eerie light from below"], "Artist Style": ["Art Nouveau", "Baroque painting", "Art Deco", "Impressionist painting", "Surrealism", "Gothic storybook illustration", "Dark fantasy concept art", "Vintage pulp illustration", "Renaissance-inspired portraiture", "Watercolor storybook art", "Oil painting", "Ink and wash illustration", "Pop art", "Comic-book illustration", "1980s fantasy paperback cover", "Dreamlike fairytale illustration", "Whimsical children's book art", "Expressionist painting", "Steampunk illustration", "Retro-futurist poster art"], "Composition": ["extreme close-up", "classic portrait", "full-body character shot", "cinematic wide shot", "low-angle hero shot", "high-angle view", "over-the-shoulder composition", "symmetrical centered composition", "dynamic diagonal composition", "silhouette against the background", "environmental portrait", "bird's-eye view"], "Environment": ["foggy forest", "rain-soaked city street", "abandoned mansion", "moonlit beach", "enchanted garden", "underground cavern", "rooftop at night", "old-fashioned carnival", "cozy cottage interior", "futuristic city", "antique shop", "haunted hotel"], "Mood": ["mysterious", "whimsical", "romantic", "ominous", "melancholic", "chaotic", "dreamlike", "triumphant", "nostalgic", "playful"], "Wildcard": ["include a tiny black cat", "a rubber duck appears somewhere in the scene", "one object is glowing", "something is upside down", "include a suspiciously fancy teacup", "a butterfly lands on the character", "there is a hidden skull", "include an unexpected balloon", "a tiny dragon is watching from the background", "one reflection shows something different", "include an old cassette tape", "something in the background is wearing sunglasses", "a single red rose appears", "include a mysterious key", "there is a tiny paper boat", "a raven is carrying something important", "include an absurdly oversized object", "a clock shows the wrong time", "one character is holding a completely ordinary grocery bag", "there is a tiny hidden alien"]};
+const dice={"Subject": 20, "Character": 20, "Color Scheme": 12, "Lighting": 12, "Artist Style": 20, "Composition": 12, "Environment": 12, "Mood": 10, "Wildcard": 20};
+const rolls={};
+const grid=document.getElementById('diceGrid');
+
+Object.entries(dice).forEach(([name,sides])=>{
+ const d=document.createElement('div'); d.className='die'; d.id='die-'+name.replaceAll(' ','-');
+ d.innerHTML=`<div class="label">${name} · D${sides}</div>
+ <div class="shape" id="face-${name.replaceAll(' ','-')}">?</div>
+ <div class="result" id="result-${name.replaceAll(' ','-')}">Not rolled</div>
+ <button onclick="rollOne('${name}')">🎲 Roll</button>`;
+ grid.appendChild(d);
+});
+
+function rollOne(name){
+ const el=document.getElementById('die-'+name.replaceAll(' ','-'));
+ const face=document.getElementById('face-'+name.replaceAll(' ','-'));
+ const result=document.getElementById('result-'+name.replaceAll(' ','-'));
+ el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling');
+ const sides=dice[name];
+ const max=Math.min(sides,tables[name].length);
+ const n=Math.floor(Math.random()*max)+1;
+ rolls[name]=n;
+ face.textContent=n;
+ result.textContent=tables[name][n-1];
+}
+function rollAll(){
+ Object.keys(dice).forEach((n,i)=>setTimeout(()=>rollOne(n),i*90));
+ setTimeout(makePrompt, Object.keys(dice).length*90+800);
+}
+function makePrompt(){
+ const missing=Object.keys(dice).filter(n=>!rolls[n]);
+ if(missing.length){ document.getElementById('promptText').textContent='Roll all the dice first — fate is not finished yet!'; return; }
+ const lines=Object.keys(dice).map(n=>`<b>${n}:</b> ${tables[n][rolls[n]-1]}`);
+ document.getElementById('promptText').innerHTML=lines.join('<br>');
+}
+function clearAll(){
+ Object.keys(rolls).forEach(k=>delete rolls[k]);
+ Object.keys(dice).forEach(n=>{
+  document.getElementById('face-'+n.replaceAll(' ','-')).textContent='?';
+  document.getElementById('result-'+n.replaceAll(' ','-')).textContent='Not rolled';
+ });
+ document.getElementById('promptText').textContent='Roll the dice to begin your adventure.';
+}
+function copyPrompt(){
+ const missing=Object.keys(dice).filter(n=>!rolls[n]);
+ if(missing.length)return;
+ const text=Object.keys(dice).map(n=>`${n}: ${tables[n][rolls[n]-1]}`).join('; ');
+ navigator.clipboard?.writeText('Create an image using these elements: '+text);
+}
+</script>
+</body>
+</html>
